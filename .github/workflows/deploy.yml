@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install & Build
         run: |
@@ -48,7 +48,9 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy ${{ steps.meta.outputs.dir }} --project-name=${{ steps.meta.outputs.project_name }} --commit-dirty=true
+          command: |
+            pages project create ${{ steps.meta.outputs.project_name }} --production-branch=main || true
+            pages deploy ${{ steps.meta.outputs.dir }} --project-name=${{ steps.meta.outputs.project_name }} --commit-dirty=true
 
       - name: Attach Custom Domain via Cloudflare API
         env:

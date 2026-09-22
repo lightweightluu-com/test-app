@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install & Build
         run: |
@@ -43,8 +43,24 @@ jobs:
           REPO_LOWER=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
           echo "project_name=$REPO_LOWER" >> $GITHUB_OUTPUT
 
+      - name: Ensure Pages Project Exists
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PROJECT_NAME: ${{ steps.meta.outputs.project_name }}
+        run: |
+          # Legt das Pages-Projekt an; Fehler bei bereits existierendem Projekt wird ignoriert
+          curl -s -X POST \
+            "https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/pages/projects" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data "{\"name\":\"${PROJECT_NAME}\",\"production_branch\":\"main\"}" || true
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
